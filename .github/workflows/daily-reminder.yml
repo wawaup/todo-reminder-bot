@@ -2,14 +2,10 @@ name: Daily Reminder Bot
 
 on:
   schedule:
-    # 每天早上 8:30 UTC = 下午 4:30 北京时间
-    - cron: '30 8 * * *'
+    # 每天早上 7:00 北京时间 (UTC+8) = 23:00 UTC 前一天
+    - cron: '0 23 * * *'
   workflow_dispatch:
-    inputs:
-      custom_date:
-        description: 'Custom date (YYYY-MM-DD, optional)'
-        required: false
-        type: string
+
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
