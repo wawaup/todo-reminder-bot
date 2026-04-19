@@ -1,0 +1,215 @@
+name: Daily Reminder Bot
+
+on:
+  schedule:
+    # 每天早上 8:30 UTC = 下午 4:30 北京时间
+    - cron: '30 8 * * *'
+  workflow_dispatch:
+    inputs:
+      custom_date:
+        description: 'Custom date (YYYY-MM-DD, optional)'
+        required: false
+        type: string
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+  FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+  FEISHU_BOT_NAME: ${{ secrets.FEISHU_BOT_NAME }}
+
+jobs:
+  send-daily-reminder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install -g supabase
+          npm install node-fetch@2
+
+      - name: Get today's todos from Supabase
+        id: fetch-todos
+        run: |
+          # Call Supabase Edge Function to get today's todos
+          RESPONSE=$(supabase functions call daily-reminder --project-ref $(echo $SUPABASE_URL | cut -d'.' -f1 | cut -d'/' -f3) 2>/dev/null || echo '{"error": "Failed to call function"}')
+          echo "TODOS_DATA=$RESPONSE" >> $GITHUB_OUTPUT
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Send Feishu reminder
+        if: steps.fetch-todos.outputs.TODOS_DATA != ''
+        run: |
+          node << 'EOF'
+          const https = require('https');
+
+          // Get token
+          const tokenData = await getToken();
+          if (!tokenData.tenant_access_token) {
+            console.error('Failed to get token:', tokenData);
+            process.exit(1);
+          }
+
+          const token = tokenData.tenant_access_token;
+
+          // Parse todos
+          let todosData = process.env.TODOS_DATA;
+          let todos;
+          try {
+            todos = JSON.parse(todosData);
+          } catch (e) {
+            console.error('Failed to parse todos:', e);
+            process.exit(1);
+          }
+
+          if (todos.error) {
+            console.error('Error from function:', todos.error);
+            process.exit(1);
+          }
+
+          const todos_list = todos.todos || [];
+          const today = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+          // Build message card
+          let cardContent = {
+            msg_type: "interactive",
+            card: {
+              config: { wide_screen_mode: true },
+              header: {
+                title: { tag: "plain_text", content: `🌅 ${today} 日程提醒` },
+                template: "orange"
+              },
+              elements: [
+                {
+                  tag: "div",
+                  text: {
+                    tag: "lark_md",
+                    content: `📅 **今日共 ${todos_list.length} 个事项**`
+                  }
+                },
+                { tag: "hr" }
+              ]
+            }
+          };
+
+          if (todos_list.length === 0) {
+            cardContent.card.elements.push({
+              tag: "div",
+              text: {
+                tag: "lark_md",
+                content: "🎉 今天没有安排，好好休息吧！"
+              }
+            });
+          } else {
+            // Add todos
+            todos_list.forEach((todo, idx) => {
+              const status = todo.isCompleted ? "✅" : "⬜";
+              cardContent.card.elements.push({
+                tag: "div",
+                text: {
+                  tag: "lark_md",
+                  content: `**${status} ${todo.timeRange}** | ${todo.categoryEmoji} ${todo.title}`
+                }
+              });
+            });
+
+            cardContent.card.elements.push({ tag: "hr" });
+
+            cardContent.card.elements.push({
+              tag: "div",
+              text: {
+                tag: "lark_md",
+                content: "💡 **回复格式：**\n• `完成 1` - 标记第1项完成\n• `完成 1 感觉很棒` - 标记完成并记录感受\n• `取消 1` - 取消完成标记"
+              }
+            });
+          }
+
+          // Send to Feishu (replace CHAT_ID with your actual chat ID)
+          const chatId = process.env.FEISHU_CHAT_ID || 'oc_xxxxxxxxxxxxxxxxxxxxx';
+          await sendMessage(token, chatId, cardContent);
+          console.log('✅ Reminder sent successfully!');
+
+          // Helper functions
+          async function getToken() {
+            return new Promise((resolve, reject) => {
+              const data = JSON.stringify({
+                app_id: process.env.FEISHU_APP_ID,
+                app_secret: process.env.FEISHU_APP_SECRET
+              });
+
+              const options = {
+                hostname: 'open.feishu.cn',
+                path: '/open-apis/auth/v3/tenant_access_token/internal',
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Content-Length': data.length
+                }
+              };
+
+              const req = https.request(options, (res) => {
+                let body = '';
+                res.on('data', (chunk) => body += chunk);
+                res.on('end', () => resolve(JSON.parse(body)));
+              });
+
+              req.on('error', reject);
+              req.write(data);
+              req.end();
+            });
+          }
+
+          async function sendMessage(token, chatId, content) {
+            return new Promise((resolve, reject) => {
+              const data = JSON.stringify({
+                receive_id: chatId,
+                msg_type: content.msg_type,
+                content: JSON.stringify(content.card)
+              });
+
+              const options = {
+                hostname: 'open.feishu.cn',
+                path: '/open-apis/im/v1/messages?receive_id_type=chat_id',
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Length': Buffer.byteLength(data)
+                }
+              };
+
+              const req = https.request(options, (res) => {
+                let body = '';
+                res.on('data', (chunk) => body += chunk);
+                res.on('end', () => {
+                  const response = JSON.parse(body);
+                  if (response.code !== 0) {
+                    console.error('Failed to send message:', response);
+                  }
+                  resolve(response);
+                });
+              });
+
+              req.on('error', reject);
+              req.write(data);
+              req.end();
+            });
+          }
+          EOF
+
+  send-reminder-to-chat:
+    runs-on: ubuntu-latest
+    needs: send-daily-reminder
+    if: always()
+    steps:
+      - name: Log completion
+        run: echo "Daily reminder workflow completed at $(date)"
