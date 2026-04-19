@@ -404,7 +404,7 @@ serve(async (req) => {
             const taskIndex = idx + 1;
 
             // 第一行：序号 + 标题 + 分类 + 时间（密集排版）
-            let content = `**#${taskIndex}** ⬜ ${todo.title} | ${categoryInfo.emoji} ${categoryInfo.label} | ${formatBeijingTime(startDate)}-${formatBeijingTime(endDate)}`;
+            let content = `**#${taskIndex} ${todo.title} **| ${categoryInfo.emoji} ${categoryInfo.label} | ${formatBeijingTime(startDate)}-${formatBeijingTime(endDate)}`;
 
             // 第二行：描述（如果有）
             if (todo.description) {
