@@ -114,12 +114,15 @@ serve(async (req) => {
         const status = todo.is_completed ? "✅" : "⬜";
         const taskIndex = idx + 1;
 
+        // 任务标题，已完成的添加删除线
+        const titleText = todo.is_completed ? `~~${todo.title}~~` : todo.title;
+
         // 任务信息（显示序号）
         cardContent.card.elements.push({
           tag: "div",
           text: {
             tag: "lark_md",
-            content: `**任务 #${taskIndex}** | ${categoryInfo.emoji} **${categoryInfo.label}** | ${formatBeijingTime(startDate)} - ${formatBeijingTime(endDate)}\n\n${status} ${todo.title}`,
+            content: `**任务 #${taskIndex}** | ${categoryInfo.emoji} **${categoryInfo.label}** | ${formatBeijingTime(startDate)} - ${formatBeijingTime(endDate)}\n\n${status} ${titleText}`,
           },
         });
 
