@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addDays, addMonths, subMonths, addWeeks, subWeeks, parseISO } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Todo, ViewType, CATEGORIES } from '../../types';
 
 interface CalendarViewProps {
@@ -128,7 +128,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Calendar Content */}
-      <div className="min-h-[300px]">
+      <div className="min-h-[500px]">
         {viewType === 'day' && (
           <DayView
             date={currentDate}
@@ -173,6 +173,7 @@ interface LayoutInfo {
 }
 
 const DayView: React.FC<DayViewProps> = ({ date, todos }) => {
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const HOUR_HEIGHT = 60; // 每小时的高度（像素）
 
@@ -297,59 +298,133 @@ const DayView: React.FC<DayViewProps> = ({ date, todos }) => {
   const layoutMap = calculateOverlapLayout(todos);
 
   return (
-    <div className="relative">
-      {/* 时间轴网格 */}
-      <div className="space-y-0">
-        {hours.map((hour) => (
-          <div key={hour} className="flex" style={{ height: `${HOUR_HEIGHT}px` }}>
-            <div className="w-16 flex-shrink-0 text-xs text-[#8D6E63] text-right pr-3 pt-1">
-              {hour.toString().padStart(2, '0')}:00
-            </div>
-            <div className="flex-1 border-t border-gray-100" />
-          </div>
-        ))}
-      </div>
-
-      {/* 任务时间块（绝对定位） */}
-      <div className="absolute top-0 left-16 right-0" style={{ height: `${24 * HOUR_HEIGHT}px` }}>
-        {todos.map((todo) => {
-          const { top, height } = getTaskPosition(todo);
-          const startTime = parseISO(todo.start_time);
-          const layout = layoutMap.get(todo.id) || { column: 0, totalColumns: 1 };
-
-          // 计算水平位置和宽度
-          const columnWidth = 100 / layout.totalColumns;
-          const leftPercent = layout.column * columnWidth;
-          const widthPercent = columnWidth;
-
-          return (
-            <div
-              key={todo.id}
-              className="absolute px-2 py-1 rounded-lg text-xs overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-              style={{
-                top: `${top}px`,
-                height: `${height}px`,
-                left: `${leftPercent}%`,
-                width: `calc(${widthPercent}% - 4px)`,
-                backgroundColor: CATEGORIES[todo.category].bgColor,
-                color: CATEGORIES[todo.category].color,
-                border: `1px solid ${CATEGORIES[todo.category].color}20`,
-              }}
-              title={`${format(startTime, 'HH:mm')} - ${format(parseISO(todo.end_time), 'HH:mm')}: ${todo.title}`}
-            >
-              <div className="font-medium truncate">
-                {CATEGORIES[todo.category].emoji} {format(startTime, 'HH:mm')} {todo.title}
+    <>
+      <div className="relative">
+        {/* 时间轴网格 */}
+        <div className="space-y-0">
+          {hours.map((hour) => (
+            <div key={hour} className="flex" style={{ height: `${HOUR_HEIGHT}px` }}>
+              <div className="w-16 flex-shrink-0 text-xs text-[#8D6E63] text-right pr-3 pt-1">
+                {hour.toString().padStart(2, '0')}:00
               </div>
-              {height > 40 && todo.description && (
-                <div className="text-xs opacity-75 truncate mt-0.5">
-                  {todo.description}
-                </div>
-              )}
+              <div className="flex-1 border-t border-gray-100" />
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* 任务时间块（绝对定位） */}
+        <div className="absolute top-0 left-16 right-0" style={{ height: `${24 * HOUR_HEIGHT}px` }}>
+          {todos.map((todo) => {
+            const { top, height } = getTaskPosition(todo);
+            const startTime = parseISO(todo.start_time);
+            const layout = layoutMap.get(todo.id) || { column: 0, totalColumns: 1 };
+
+            // 计算水平位置和宽度
+            const columnWidth = 100 / layout.totalColumns;
+            const leftPercent = layout.column * columnWidth;
+            const widthPercent = columnWidth;
+
+            return (
+              <div
+                key={todo.id}
+                onClick={() => setSelectedTodo(todo)}
+                className={`absolute px-2 py-1 rounded-lg text-xs overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${
+                  todo.is_completed ? 'opacity-60' : ''
+                }`}
+                style={{
+                  top: `${top}px`,
+                  height: `${height}px`,
+                  left: `${leftPercent}%`,
+                  width: `calc(${widthPercent}% - 4px)`,
+                  backgroundColor: CATEGORIES[todo.category].bgColor,
+                  color: CATEGORIES[todo.category].color,
+                  border: `1px solid ${CATEGORIES[todo.category].color}20`,
+                }}
+                title={`${format(startTime, 'HH:mm')} - ${format(parseISO(todo.end_time), 'HH:mm')}: ${todo.title}`}
+              >
+                <div className={`font-medium truncate ${todo.is_completed ? 'line-through' : ''}`}>
+                  {CATEGORIES[todo.category].emoji} {format(startTime, 'HH:mm')} {todo.title}
+                </div>
+                {height > 40 && todo.description && (
+                  <div className="text-xs opacity-75 truncate mt-0.5">
+                    {todo.description}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      {/* 任务详情弹窗 */}
+      {selectedTodo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedTodo(null)}
+        >
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedTodo(null)}
+              className="absolute top-4 right-4 p-2 rounded-xl hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5 text-[#8D6E63]" />
+            </button>
+
+            <h3 className={`text-xl font-semibold text-[#5D4037] mb-4 pr-8 ${selectedTodo.is_completed ? 'line-through' : ''}`}>
+              {selectedTodo.title}
+            </h3>
+
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">{CATEGORIES[selectedTodo.category].emoji}</span>
+              <span
+                className="px-3 py-1 rounded-full text-sm font-medium"
+                style={{
+                  backgroundColor: CATEGORIES[selectedTodo.category].bgColor,
+                  color: CATEGORIES[selectedTodo.category].color,
+                }}
+              >
+                {CATEGORIES[selectedTodo.category].label}
+              </span>
+            </div>
+
+            <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+              <div className="text-sm text-[#8D6E63] mb-1">时间</div>
+              <div className="text-[#5D4037] font-medium">
+                {format(parseISO(selectedTodo.start_time), 'HH:mm')} - {format(parseISO(selectedTodo.end_time), 'HH:mm')}
+              </div>
+              <div className="text-xs text-[#8D6E63] mt-1">
+                {format(parseISO(selectedTodo.start_time), 'yyyy年M月d日 EEEE', { locale: zhCN })}
+              </div>
+            </div>
+
+            {selectedTodo.description && (
+              <div className="mb-4">
+                <div className="text-sm text-[#8D6E63] mb-1">描述</div>
+                <div className="text-[#5D4037] whitespace-pre-wrap">{selectedTodo.description}</div>
+              </div>
+            )}
+
+            {selectedTodo.is_completed && (
+              <div className="p-3 bg-green-50 rounded-xl border border-green-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-green-600 font-medium">✓ 已完成</span>
+                </div>
+                {selectedTodo.feeling && (
+                  <div>
+                    <div className="text-sm text-green-700 mb-1">完成感受</div>
+                    <div className="text-green-800">{selectedTodo.feeling}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

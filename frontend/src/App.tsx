@@ -196,7 +196,7 @@ function App() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                <div className="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto">
                   {filteredTodos.map((todo, idx) => (
                     <div key={todo.id}>
                       <TodoItem
