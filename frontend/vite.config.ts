@@ -4,7 +4,9 @@ import { defineConfig } from "vite"
 import sourceIdentifierPlugin from 'vite-plugin-source-identifier'
 
 const isProd = process.env.BUILD_MODE === 'prod'
+
 export default defineConfig({
+  base: isProd ? '/todo-reminder-bot/' : '/',
   plugins: [
     react(),
     sourceIdentifierPlugin({
