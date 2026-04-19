@@ -331,6 +331,139 @@ serve(async (req) => {
     // 解析用户命令
     const completeMatch = text.match(/^完成\s*(\d+)(?:\s+(.+))?$/);
     const cancelMatch = text.match(/^取消\s*(\d+)$/);
+    const dailyReminderMatch = text.match(/^(今日任务|今日汇总)$/);
+
+    // 处理今日任务汇总命令
+    if (dailyReminderMatch) {
+      console.log("Handling daily reminder command");
+
+      try {
+        // 获取北京时间的今日起止时间
+        const { start, end } = getBeijingDayRange();
+        console.log(`Time range: ${start.toISOString()} to ${end.toISOString()}`);
+
+        // 查询今日所有任务
+        const { data: todos, error } = await supabase
+          .from("todos")
+          .select("*")
+          .gte("start_time", start.toISOString())
+          .lt("start_time", end.toISOString())
+          .order("start_time", { ascending: true });
+
+        if (error) throw error;
+
+        console.log(`Found ${todos?.length || 0} todos for today`);
+
+        // 获取飞书 access token
+        const tenantAccessToken = await getFeishuAccessToken(feishuAppId, feishuAppSecret);
+
+        // 格式化日期（北京时间）
+        const todayStr = new Date().toLocaleDateString("zh-CN", {
+          timeZone: "Asia/Shanghai",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          weekday: "long",
+        });
+
+        // 构建消息卡片
+        // 过滤出未完成的任务
+        const incompleteTodos = todos?.filter((todo: Todo) => !todo.is_completed) || [];
+
+        const cardContent = {
+          config: { wide_screen_mode: true },
+          header: {
+            title: { tag: "plain_text", content: `${todayStr} 待办任务` },
+            template: "blue",
+          },
+          elements: [
+            {
+              tag: "div",
+              text: {
+                tag: "lark_md",
+                content: `📅 **今日待办 ${incompleteTodos.length} 个事项**`,
+              },
+            },
+          ] as any[],
+        };
+
+        if (incompleteTodos.length === 0) {
+          cardContent.elements.push({
+            tag: "div",
+            text: {
+              tag: "lark_md",
+              content: "🎉 今天没有待办任务，好好休息吧！",
+            },
+          });
+        } else {
+          // 添加每个未完成的 todo（密集排版，两行展示）
+          incompleteTodos.forEach((todo: Todo, idx: number) => {
+            const categoryInfo = CATEGORY_INFO[todo.category] || { emoji: "📝", label: "其他" };
+            const startDate = new Date(todo.start_time);
+            const endDate = new Date(todo.end_time);
+            const taskIndex = idx + 1;
+
+            // 第一行：序号 + 标题 + 分类 + 时间（密集排版）
+            let content = `**#${taskIndex}** ⬜ ${todo.title} | ${categoryInfo.emoji} ${categoryInfo.label} | ${formatBeijingTime(startDate)}-${formatBeijingTime(endDate)}`;
+
+            // 第二行：描述（如果有）
+            if (todo.description) {
+              content += `\n${todo.description}`;
+            }
+
+            cardContent.elements.push({
+              tag: "div",
+              text: {
+                tag: "lark_md",
+                content: content,
+              },
+            });
+          });
+        }
+
+        console.log("Card content:", JSON.stringify(cardContent, null, 2));
+
+        // 发送消息到飞书
+        const sendResponse = await fetch(
+          "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tenantAccessToken}`,
+            },
+            body: JSON.stringify({
+              receive_id: chatId,
+              msg_type: "interactive",
+              content: JSON.stringify(cardContent),
+            }),
+          }
+        );
+
+        const sendResult = await sendResponse.json();
+
+        if (sendResult.code === 0) {
+          console.log("✅ Daily reminder sent successfully!");
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "今日任务汇总已发送",
+              todosCount: todos?.length || 0,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          throw new Error(`Failed to send message: ${sendResult.msg}`);
+        }
+      } catch (error) {
+        console.error("Error sending daily reminder:", error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return new Response(
+          JSON.stringify({ success: false, error: `发送失败: ${errorMessage}` }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
+      }
+    }
 
     if (!completeMatch && !cancelMatch) {
       return new Response(
@@ -366,8 +499,33 @@ serve(async (req) => {
 
     const targetTodo = todayTodos[index];
 
+    // 获取飞书 access token
+    const tenantAccessToken = await getFeishuAccessToken(feishuAppId, feishuAppSecret);
+
     // 更新任务状态
     if (action === "complete") {
+      // 检查任务是否已经完成
+      if (targetTodo.is_completed) {
+        // 任务已经完成，返回友好提示
+        await fetch("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tenantAccessToken}`,
+          },
+          body: JSON.stringify({
+            receive_id: chatId,
+            msg_type: "text",
+            content: JSON.stringify({ text: `✅ 任务「${targetTodo.title}」已经完成过了哦~` }),
+          }),
+        });
+
+        return new Response(
+          JSON.stringify({ success: true, message: "任务已经完成" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { error: updateError } = await supabase
         .from("todos")
         .update({
@@ -406,9 +564,6 @@ serve(async (req) => {
         content: `Index: ${index + 1}`,
       });
     }
-
-    // 获取飞书 access token
-    const tenantAccessToken = await getFeishuAccessToken(feishuAppId, feishuAppSecret);
 
     // 发送确认消息卡片
     if (action === "complete") {
