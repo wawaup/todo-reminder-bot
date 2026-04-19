@@ -50,9 +50,61 @@ supabase functions deploy daily-reminder
 - `FEISHU_APP_SECRET`
 - `FEISHU_CHAT_ID`
 
-### 4. 配置外部 Cron 服务
+### 4. 配置定时任务
 
-使用 cron-job.org 创建两个定时任务：
+有三种方案可选，推荐使用方案 1（Supabase pg_cron）。
+
+#### 方案 1：Supabase pg_cron（推荐）
+
+在 Supabase Dashboard 的 SQL Editor 中执行 `supabase/migrations/002_setup_cron_job.sql`：
+
+```sql
+-- 启用 pg_cron 扩展
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- 创建定时任务：每分钟执行一次
+SELECT cron.schedule(
+  'check-reminders-job',
+  '* * * * *',
+  $$
+  SELECT
+    net.http_post(
+      url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/check-reminders',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer YOUR_ANON_KEY'
+      ),
+      body := '{}'::jsonb
+    ) AS request_id;
+  $$
+);
+```
+
+**注意**：
+- 替换 `YOUR_PROJECT_REF` 为你的 Supabase 项目引用
+- 替换 `YOUR_ANON_KEY` 为你的 Supabase Anon Key
+- 查看任务：`SELECT * FROM cron.job;`
+- 查看执行历史：`SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`
+
+#### 方案 2：GitHub Actions
+
+如果 Supabase 项目不支持 pg_cron，可以使用 GitHub Actions。
+
+1. 在 GitHub 仓库设置中添加 Secrets：
+   - `SUPABASE_URL`: `https://YOUR_PROJECT_REF.supabase.co`
+   - `SUPABASE_ANON_KEY`: 你的 Supabase Anon Key
+
+2. GitHub Actions 配置文件已创建在 `.github/workflows/check-reminders.yml`
+
+3. 启用 GitHub Actions：
+   - 进入仓库的 Actions 页面
+   - 启用 workflow
+
+**注意**：GitHub Actions 的 cron 可能有 5-10 分钟的延迟。
+
+#### 方案 3：外部 Cron 服务
+
+使用 cron-job.org 或 EasyCron 创建定时任务：
 
 **准时提醒（每分钟）：**
 - URL: `https://[project-ref].supabase.co/functions/v1/check-reminders`
@@ -62,7 +114,7 @@ supabase functions deploy daily-reminder
 
 **每日汇总（早上7点）：**
 - URL: `https://[project-ref].supabase.co/functions/v1/daily-reminder`
-- Schedule: `0 23 * * *`
+- Schedule: `0 23 * * *`（UTC 时间，对应北京时间早上 7 点）
 - Method: POST
 - Header: `Authorization: Bearer [anon-key]`
 

@@ -162,83 +162,123 @@ serve(async (req) => {
       });
     }
 
-    const responseMessage = action === "complete"
-      ? `✅ 已标记「${targetTodo.title}」完成！${feeling ? `\n💭 感受：${feeling}` : ""}`
-      : `↩️ 已取消「${targetTodo.title}」的完成状态`;
-
     // 获取飞书 access token
     const tenantAccessToken = await getFeishuAccessToken(feishuAppId, feishuAppSecret);
 
-    // 发送确认消息
-    await fetch("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${tenantAccessToken}`,
-      },
-      body: JSON.stringify({
-        receive_id: chatId,
-        msg_type: "text",
-        content: JSON.stringify({ text: responseMessage }),
-      }),
-    });
+    // 发送确认消息卡片
+    if (action === "complete") {
+      const categoryInfo = CATEGORY_INFO[targetTodo.category] || { emoji: "📝", label: "其他" };
+      const startDate = new Date(targetTodo.start_time);
+      const endDate = new Date(targetTodo.end_time);
 
-    // 查询更新后的任务列表
-    const { data: incompleteTodos } = await supabase
+      const confirmCard = {
+        config: { wide_screen_mode: true },
+        header: {
+          title: { tag: "plain_text", content: "🎉 恭喜完成任务！" },
+          template: "green",
+        },
+        elements: [
+          {
+            tag: "div",
+            text: {
+              tag: "lark_md",
+              content: `**${targetTodo.title}**`,
+            },
+          },
+          {
+            tag: "div",
+            text: {
+              tag: "lark_md",
+              content: `${categoryInfo.emoji} ${categoryInfo.label} | ${formatBeijingTime(startDate)} - ${formatBeijingTime(endDate)}`,
+            },
+          },
+          ...(feeling
+            ? [
+                { tag: "hr" },
+                {
+                  tag: "div",
+                  text: {
+                    tag: "lark_md",
+                    content: `💭 **感受：** ${feeling}`,
+                  },
+                },
+              ]
+            : []),
+        ],
+      };
+
+      await fetch("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tenantAccessToken}`,
+        },
+        body: JSON.stringify({
+          receive_id: chatId,
+          msg_type: "interactive",
+          content: JSON.stringify(confirmCard),
+        }),
+      });
+    } else {
+      // 取消完成状态，发送简单文本消息
+      await fetch("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tenantAccessToken}`,
+        },
+        body: JSON.stringify({
+          receive_id: chatId,
+          msg_type: "text",
+          content: JSON.stringify({ text: `↩️ 已取消「${targetTodo.title}」的完成状态` }),
+        }),
+      });
+    }
+
+    // 查询接下来的未完成任务（只显示 3 个）
+    const { data: upcomingTodos } = await supabase
       .from("todos")
       .select("*")
       .gte("start_time", start.toISOString())
       .lt("start_time", end.toISOString())
       .eq("is_completed", false)
-      .order("start_time", { ascending: true });
-
-    const { data: completedTodos } = await supabase
-      .from("todos")
-      .select("*")
-      .gte("start_time", start.toISOString())
-      .lt("start_time", end.toISOString())
-      .eq("is_completed", true)
-      .order("completed_at", { ascending: false })
+      .order("start_time", { ascending: true })
       .limit(3);
 
-    // 合并并按时间排序
-    const displayTodos = [...(incompleteTodos || []), ...(completedTodos || [])].sort(
-      (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
-    );
+    if (upcomingTodos && upcomingTodos.length > 0) {
+      // 获取今日所有任务用于计算序号
+      const { data: allTodayTodos } = await supabase
+        .from("todos")
+        .select("*")
+        .gte("start_time", start.toISOString())
+        .lt("start_time", end.toISOString())
+        .order("start_time", { ascending: true });
 
-    if (displayTodos.length > 0) {
       const cardContent = {
         msg_type: "interactive",
         card: {
           config: { wide_screen_mode: true },
           header: {
-            title: { tag: "plain_text", content: "📋 今日事项更新" },
+            title: { tag: "plain_text", content: "📋 接下来的任务" },
             template: "blue",
           },
-          elements: [
-            {
-              tag: "div",
-              text: {
-                tag: "lark_md",
-                content: `📅 **剩余 ${incompleteTodos?.length || 0} 个未完成事项**`,
-              },
-            },
-            { tag: "hr" },
-          ],
+          elements: [] as any[],
         },
       };
 
-      displayTodos.forEach((todo: Todo) => {
+      upcomingTodos.forEach((todo: Todo) => {
         const categoryInfo = CATEGORY_INFO[todo.category] || { emoji: "📝", label: "其他" };
         const startDate = new Date(todo.start_time);
         const endDate = new Date(todo.end_time);
-        const status = todo.is_completed ? "✅" : "⬜";
+
+        // 计算在今日任务列表中的序号
+        const taskIndex = (allTodayTodos || []).findIndex(t => t.id === todo.id) + 1;
 
         cardContent.card.elements.push({
           tag: "div",
           text: {
             tag: "lark_md",
-            content: `**${status} ${formatBeijingTime(startDate)}-${formatBeijingTime(endDate)}** | ${categoryInfo.emoji} ${todo.title}`,
+            content: `**${taskIndex}. ${formatBeijingTime(startDate)}-${formatBeijingTime(endDate)}** | ${categoryInfo.emoji} ${todo.title}`,
           },
         });
       });

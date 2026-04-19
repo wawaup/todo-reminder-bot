@@ -1,0 +1,23 @@
+name: Check Reminders
+
+on:
+  schedule:
+    # 每分钟执行一次
+    - cron: '* * * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  check-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call check-reminders function
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            ${{ secrets.SUPABASE_URL }}/functions/v1/check-reminders
+        continue-on-error: true
+
+      - name: Log result
+        if: always()
+        run: echo "Check reminders job completed"

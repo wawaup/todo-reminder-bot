@@ -81,11 +81,23 @@ serve(async (req) => {
     // 获取飞书 access token
     const tenantAccessToken = await getFeishuAccessToken(feishuAppId, feishuAppSecret);
 
+    // 获取今日所有任务用于计算序号
+    const { start, end } = getBeijingDayRange();
+    const { data: allTodayTodos } = await supabase
+      .from("todos")
+      .select("*")
+      .gte("start_time", start.toISOString())
+      .lt("start_time", end.toISOString())
+      .order("start_time", { ascending: true });
+
     // 发送每个提醒
     for (const todo of todos as Todo[]) {
       const categoryInfo = CATEGORY_INFO[todo.category] || { emoji: "📝", label: "其他" };
       const startDate = new Date(todo.start_time);
       const endDate = new Date(todo.end_time);
+
+      // 计算在今日任务列表中的序号
+      const taskIndex = (allTodayTodos || []).findIndex(t => t.id === todo.id) + 1;
 
       const cardContent = {
         msg_type: "interactive",
@@ -112,6 +124,14 @@ serve(async (req) => {
                   },
                 ]
               : []),
+            { tag: "hr" },
+            {
+              tag: "div",
+              text: {
+                tag: "lark_md",
+                content: `💡 **快捷操作：** 回复 \`完成 ${taskIndex}\` 标记完成，或 \`完成 ${taskIndex} 你的感受\` 记录感受`,
+              },
+            },
           ],
         },
       };
