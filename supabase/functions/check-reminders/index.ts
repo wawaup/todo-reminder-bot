@@ -112,12 +112,11 @@ serve(async (req) => {
               tag: "div",
               text: {
                 tag: "lark_md",
-                content: `${categoryInfo.emoji} **${categoryInfo.label}** | ${formatBeijingTime(startDate)} - ${formatBeijingTime(endDate)}`,
+                content: `**任务 #${taskIndex}** | ${categoryInfo.emoji} **${categoryInfo.label}** | ${formatBeijingTime(startDate)} - ${formatBeijingTime(endDate)}`,
               },
             },
             ...(todo.description
               ? [
-                  { tag: "hr" },
                   {
                     tag: "div",
                     text: { tag: "lark_md", content: todo.description },
@@ -126,15 +125,33 @@ serve(async (req) => {
               : []),
             { tag: "hr" },
             {
+              tag: "action",
+              actions: [
+                {
+                  tag: "button",
+                  text: { tag: "plain_text", content: "✅ 已完成" },
+                  type: "primary",
+                  value: JSON.stringify({
+                    action: "complete",
+                    index: taskIndex,
+                    todo_id: todo.id,
+                  }),
+                },
+              ],
+            },
+            {
               tag: "div",
               text: {
                 tag: "lark_md",
-                content: `💡 **快捷操作：** 回复 \`完成 ${taskIndex}\` 标记完成，或 \`完成 ${taskIndex} 你的感受\` 记录感受`,
+                content: `💡 回复 \`完成 ${taskIndex}\` 标记完成，或 \`完成 ${taskIndex} 你的感受\` 记录感受`,
               },
             },
           ],
         },
       };
+
+      // 添加调试日志
+      console.log("Card content:", JSON.stringify(cardContent, null, 2));
 
       const sendResponse = await fetch(
         "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id",

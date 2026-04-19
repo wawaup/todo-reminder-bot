@@ -70,6 +70,131 @@ serve(async (req) => {
 
     // 解析飞书消息
     const event = body?.event;
+
+    // 处理卡片按钮点击事件
+    if (event?.action) {
+      console.log("Handling card action event");
+      console.log("Full event:", JSON.stringify(event, null, 2));
+
+      const action = event.action;
+      const openId = event.operator?.open_id;
+      const chatId = event.context?.open_chat_id;
+      const messageId = event.context?.open_message_id;
+
+      let actionValue;
+      try {
+        actionValue = JSON.parse(action.value);
+      } catch (e) {
+        console.error("Failed to parse action value:", e);
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid action value" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+
+      console.log("Action value:", actionValue);
+
+      const todoId = actionValue.todo_id;
+      const taskIndex = actionValue.index;
+      const actionType = actionValue.action;
+
+      // 获取飞书 access token
+      const tenantAccessToken = await getFeishuAccessToken(feishuAppId, feishuAppSecret);
+
+      if (actionType === "complete") {
+        // 直接标记任务完成
+        const { data: todo, error: fetchError } = await supabase
+          .from("todos")
+          .select("*")
+          .eq("id", todoId)
+          .single();
+
+        if (fetchError || !todo) {
+          console.error("Todo not found:", fetchError);
+          return new Response(
+            JSON.stringify({ success: false, error: "任务不存在" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+          );
+        }
+
+        // 更新任务状态
+        const { error: updateError } = await supabase
+          .from("todos")
+          .update({
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", todoId);
+
+        if (updateError) {
+          console.error("Failed to update todo:", updateError);
+          throw updateError;
+        }
+
+        // 记录交互
+        await supabase.from("bot_interactions").insert({
+          todo_id: todoId,
+          action: "complete_button",
+          content: `Button click: Index ${taskIndex}`,
+        });
+
+        // 发送确认消息
+        const categoryInfo = CATEGORY_INFO[todo.category] || { emoji: "📝", label: "其他" };
+        const startDate = new Date(todo.start_time);
+        const endDate = new Date(todo.end_time);
+
+        const confirmCard = {
+          config: { wide_screen_mode: true },
+          header: {
+            title: { tag: "plain_text", content: "🎉 恭喜完成任务！" },
+            template: "green",
+          },
+          elements: [
+            {
+              tag: "div",
+              text: {
+                tag: "lark_md",
+                content: `**${todo.title}**`,
+              },
+            },
+            {
+              tag: "div",
+              text: {
+                tag: "lark_md",
+                content: `${categoryInfo.emoji} ${categoryInfo.label} | ${formatBeijingTime(startDate)} - ${formatBeijingTime(endDate)}`,
+              },
+            },
+          ],
+        };
+
+        await fetch("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tenantAccessToken}`,
+          },
+          body: JSON.stringify({
+            receive_id: chatId,
+            msg_type: "interactive",
+            content: JSON.stringify(confirmCard),
+          }),
+        });
+
+        console.log(`✅ Task ${taskIndex} marked as completed via button`);
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Task completed" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: false, error: "Unknown action type" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // 处理文本消息
     if (!event?.message) {
       return new Response(
         JSON.stringify({ success: true, message: "No message event" }),
@@ -309,7 +434,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: responseMessage }),
+      JSON.stringify({ success: true, message: `Task ${action}d successfully` }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

@@ -1,7 +1,7 @@
 // 共享工具函数
 
 // 常量定义
-export const REMINDER_WINDOW_START_MIN = 5;
+export const REMINDER_WINDOW_START_MIN = 0;
 export const REMINDER_WINDOW_END_MIN = 10;
 
 export const CATEGORY_INFO: Record<string, { emoji: string; label: string }> = {
