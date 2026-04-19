@@ -88,7 +88,7 @@ function App() {
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[#5D4037]">🌸 小管家 Todo</h1>
+              <h1 className="text-2xl font-bold text-[#5D4037]"> 🌟 小管家 Todo</h1>
               <p className="text-sm text-[#8D6E63] mt-1">
                 {format(new Date(), 'yyyy年 M月 d日 EEEE', { locale: zhCN })}
               </p>

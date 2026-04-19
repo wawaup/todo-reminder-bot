@@ -9,28 +9,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface FeishuMessage {
-  header: {
-    app_id: string;
-    app_secret: string;
-  };
-  event: {
-    type: string;
-    message: {
-      message_id: string;
-      chat_id: string;
-      sender: {
-        sender_id: {
-          open_id: string;
-        };
-        sender_type: string;
-      };
-      content: string;
-      create_time: string;
-    };
-  };
-}
-
 serve(async (req) => {
   // 处理 CORS 预检请求
   if (req.method === "OPTIONS") {
@@ -38,12 +16,32 @@ serve(async (req) => {
   }
 
   try {
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Received webhook:", JSON.stringify(body, null, 2));
+
+    // ========== 处理飞书 URL 验证 ==========
+    // 飞书发送 challenge 用于验证 URL 可访问
+    if (body.challenge) {
+      console.log("Handling Feishu URL verification challenge");
+      return new Response(
+        JSON.stringify({ challenge: body.challenge }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ========== 处理飞书事件回调 ==========
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const body = await req.json();
-    console.log("Received webhook:", JSON.stringify(body, null, 2));
 
     // 解析飞书消息
     const event = body?.event;

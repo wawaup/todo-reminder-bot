@@ -1,13 +1,4 @@
----
-AIGC:
-    ContentProducer: Minimax Agent AI
-    ContentPropagator: Minimax Agent AI
-    Label: AIGC
-    ProduceID: "00000000000000000000000000000000"
-    PropagateID: "00000000000000000000000000000000"
-    ReservedCode1: 30440220569d6bda75f153ec0b4da79e61d0b6a2ba05644f528ee9f77726b6050c7bf17f02207fd04188a6c928c6552d7f82d923f5eee288ff7e8b8ab3e09559bad1630e8ccd
-    ReservedCode2: 304502204e5402738d77a00b178fad66661895f50b18c55738cc4e3635534d4074711dfb022100a6e6a96bd8f8494a89fade9fc8a5d0f26bfbe6e7a33251a00b896c55c353ce9e
----
+
 
 # 🌸 小管家 Todo
 
@@ -16,12 +7,14 @@ AIGC:
 ## 功能特性
 
 ### Web 端
+
 - **多视图切换**：日视图、周视图、月视图
 - **新建日程**：支持标题、描述、精确到分钟的时间段、四种分类
 - **完成记录**：点击完成按钮，弹出感受选择（😊很棒/😐一般/😔沮丧/💪能量/🎉超额）
 - **任务管理**：编辑、删除日程
 
 ### 飞书机器人
+
 - **每日定时提醒**：每天早上 8:30 自动推送日程到飞书群
 - **交互式回复**：
   - `完成 1` - 标记第1项完成
@@ -57,6 +50,7 @@ AIGC:
 ### 3. 配置 GitHub Secrets
 
 在 GitHub 仓库 Settings > Secrets 中添加：
+
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_ACCESS_TOKEN`
@@ -97,6 +91,7 @@ todo-reminder-bot/
 ## 设计风格
 
 采用**温暖清新**的视觉风格：
+
 - 主色：珊瑚橙 `#FF8A65`
 - 辅色：薄荷绿 `#81C784`
 - 强调色：阳光金黄 `#FFD54F`
