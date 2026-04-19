@@ -101,39 +101,39 @@ export const TodoItem: React.FC<TodoItemProps> = ({
   return (
     <>
       <div
-        className={`relative p-4 rounded-2xl transition-all ${
+        className={`relative p-2.5 rounded-xl transition-all ${
           todo.is_completed ? 'bg-gray-50' : 'bg-white'
         }`}
         style={{
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
-          borderLeft: `4px solid ${todo.is_completed ? '#ccc' : categoryInfo.color}`,
+          boxShadow: '0 1px 6px rgba(0, 0, 0, 0.06)',
+          borderLeft: `3px solid ${todo.is_completed ? '#ccc' : categoryInfo.color}`,
         }}
       >
         {/* Header */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2">
           {/* Complete Button */}
           <button
             onClick={handleComplete}
-            className={`flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
+            className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
               todo.is_completed
                 ? 'bg-[#81C784] border-[#81C784] text-white'
                 : 'border-[#FF8A65] hover:bg-[#FFF3E0] hover:scale-110'
             }`}
           >
-            {todo.is_completed && <Check className="w-4 h-4" />}
+            {todo.is_completed && <Check className="w-3 h-3" />}
           </button>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             {/* Index & Title */}
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-1.5 mb-0.5">
               {index !== undefined && (
-                <span className="text-xs font-medium text-[#8D6E63] bg-[#FFF8F0] px-2 py-0.5 rounded">
+                <span className="text-xs font-medium text-[#8D6E63] bg-[#FFF8F0] px-1.5 py-0.5 rounded">
                   #{index}
                 </span>
               )}
               <h3
-                className={`text-base font-semibold ${
+                className={`text-sm font-semibold ${
                   todo.is_completed ? 'line-through text-gray-400' : 'text-[#5D4037]'
                 }`}
               >
@@ -143,20 +143,20 @@ export const TodoItem: React.FC<TodoItemProps> = ({
 
             {/* Description */}
             {todo.description && (
-              <p className="text-sm text-[#8D6E63] mb-2">{todo.description}</p>
+              <p className="text-xs text-[#8D6E63] mb-1 line-clamp-1">{todo.description}</p>
             )}
 
             {/* Meta Info */}
-            <div className="flex flex-wrap items-center gap-3 text-sm">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
               {/* Time */}
-              <div className="flex items-center gap-1 text-[#8D6E63]">
-                <Clock className="w-4 h-4" />
+              <div className="flex items-center gap-0.5 text-[#8D6E63]">
+                <Clock className="w-3 h-3" />
                 <span>{formatTimeRange()}</span>
               </div>
 
               {/* Category */}
               <span
-                className="px-2 py-0.5 rounded-full text-xs font-medium"
+                className="px-1.5 py-0.5 rounded-full text-xs font-medium"
                 style={{
                   backgroundColor: categoryInfo.bgColor,
                   color: categoryInfo.color,
@@ -166,25 +166,25 @@ export const TodoItem: React.FC<TodoItemProps> = ({
               </span>
 
               {/* Feeling */}
-              {todo.feeling && (
-                <span className="text-sm text-[#81C784]">💭 {todo.feeling}</span>
+              {todo.feeling && !showFeelings && (
+                <span className="text-xs text-[#81C784]">💭 {todo.feeling}</span>
               )}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <button
               onClick={() => onEdit(todo)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-[#8D6E63]"
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-[#8D6E63]"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => onDelete(todo.id)}
-              className="p-2 rounded-lg hover:bg-red-50 transition-colors text-red-400"
+              className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-red-400"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
