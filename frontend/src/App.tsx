@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, RefreshCw, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { TodoItem, TodoForm } from './components/TodoItem';
 import { CalendarView } from './components/Calendar';
@@ -31,28 +31,28 @@ function App() {
 
   // Statistics
   const stats = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(today);
-    todayEnd.setHours(23, 59, 59, 999);
+    const selectedDate = new Date(currentDate);
+    selectedDate.setHours(0, 0, 0, 0);
+    const selectedDateEnd = new Date(currentDate);
+    selectedDateEnd.setHours(23, 59, 59, 999);
 
-    const todayTodos = todos.filter((todo) => {
+    const selectedDateTodos = todos.filter((todo) => {
       const todoDate = new Date(todo.start_time);
-      return todoDate >= today && todoDate <= todayEnd;
+      return todoDate >= selectedDate && todoDate <= selectedDateEnd;
     });
 
-    const completed = todayTodos.filter((t) => t.is_completed).length;
-    const total = todayTodos.length;
+    const completed = selectedDateTodos.filter((t) => t.is_completed).length;
+    const total = selectedDateTodos.length;
     const pending = total - completed;
 
     // Category breakdown - 数据库中的 category 已经是英文键名
     const categoryBreakdown = Object.keys(CATEGORIES).map((cat) => ({
       ...CATEGORIES[cat as keyof typeof CATEGORIES],
-      count: todayTodos.filter((t) => t.category === cat).length,
+      count: selectedDateTodos.filter((t) => t.category === cat).length,
     }));
 
     return { completed, total, pending, categoryBreakdown };
-  }, [todos]);
+  }, [todos, currentDate]);
 
   const handleCreateTodo = async (data: TodoFormData): Promise<boolean> => {
     return await createTodo(data);
