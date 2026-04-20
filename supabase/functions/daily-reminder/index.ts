@@ -106,7 +106,8 @@ serve(async (req) => {
         },
       });
     } else {
-      // 添加每个 todo
+      // 构建任务列表文本
+      let taskListContent = "";
       todos.forEach((todo: Todo, idx: number) => {
         const categoryInfo = CATEGORY_INFO[todo.category] || { emoji: "📝", label: "其他" };
         const startDate = new Date(todo.start_time);
@@ -114,63 +115,31 @@ serve(async (req) => {
         const status = todo.is_completed ? "✅" : "⬜";
         const taskIndex = idx + 1;
 
-        // 任务标题，已完成的添加删除线
+        // 已完成的任务，时间和标题都加删除线
+        const timeText = todo.is_completed
+          ? `~~${formatBeijingTime(startDate)}-${formatBeijingTime(endDate)}~~`
+          : `${formatBeijingTime(startDate)}-${formatBeijingTime(endDate)}`;
         const titleText = todo.is_completed ? `~~${todo.title}~~` : todo.title;
 
-        // 任务信息（显示序号）
-        cardContent.card.elements.push({
-          tag: "div",
-          text: {
-            tag: "lark_md",
-            content: `**任务 #${taskIndex}** | ${categoryInfo.emoji} **${categoryInfo.label}** | ${formatBeijingTime(startDate)} - ${formatBeijingTime(endDate)}\n\n${status} ${titleText}`,
-          },
-        });
-
-        // 描述（如果有）
-        if (todo.description) {
-          cardContent.card.elements.push({
-            tag: "div",
-            text: {
-              tag: "lark_md",
-              content: todo.description,
-            },
-          });
-        }
-
-        // 分割线和按钮
-        cardContent.card.elements.push(
-          { tag: "hr" },
-          {
-            tag: "action",
-            actions: [
-              {
-                tag: "button",
-                text: { tag: "plain_text", content: "✅ 已完成" },
-                type: "primary",
-                value: JSON.stringify({
-                  action: "complete",
-                  index: taskIndex,
-                  todo_id: todo.id,
-                }),
-              },
-            ],
-          },
-          {
-            tag: "div",
-            text: {
-              tag: "lark_md",
-              content: `💡 回复 \`完成 ${taskIndex}\` 标记完成，或 \`完成 ${taskIndex} 你的感受\` 记录感受`,
-            },
-          },
-          { tag: "hr" }
-        );
+        taskListContent += `${taskIndex}. ${status} ${timeText} | ${categoryInfo.emoji} ${titleText}\n`;
       });
 
       cardContent.card.elements.push({
         tag: "div",
         text: {
           tag: "lark_md",
-          content: "💡 **快捷操作：** 回复 `完成 1` 标记完成，或 `完成 1 你的感受` 记录感受",
+          content: taskListContent.trim(),
+        },
+      });
+
+      // 添加分割线
+      cardContent.card.elements.push({ tag: "hr" });
+
+      cardContent.card.elements.push({
+        tag: "div",
+        text: {
+          tag: "lark_md",
+          content: "💡 **快捷操作：**\n• `完成 1` - 标记第1项完成\n• `完成 1 感觉很棒` - 标记完成并记录感受\n• `取消 1` - 取消完成标记",
         },
       });
     }
