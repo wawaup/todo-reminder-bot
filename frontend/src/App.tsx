@@ -45,7 +45,7 @@ function App() {
     const total = todayTodos.length;
     const pending = total - completed;
 
-    // Category breakdown
+    // Category breakdown - 数据库中的 category 已经是英文键名
     const categoryBreakdown = Object.keys(CATEGORIES).map((cat) => ({
       ...CATEGORIES[cat as keyof typeof CATEGORIES],
       count: todayTodos.filter((t) => t.category === cat).length,
@@ -196,7 +196,7 @@ function App() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto">
+                <div className="space-y-2 max-h-[500px] overflow-y-auto">
                   {filteredTodos.map((todo, idx) => (
                     <div key={todo.id}>
                       <TodoItem

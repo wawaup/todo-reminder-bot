@@ -46,6 +46,16 @@ interface TemplateFile {
 // 验证分类
 const VALID_CATEGORIES = ["学习", "健康", "运动", "作息", "冥想", "日常"];
 
+// 中文分类到英文键名的映射
+const CATEGORY_MAPPING: Record<string, string> = {
+  "学习": "study",
+  "健康": "health",
+  "运动": "exercise",
+  "作息": "sleep",
+  "冥想": "meditation",
+  "日常": "daily",
+};
+
 // 验证时间格式 HH:MM
 function validateTimeFormat(time: string): boolean {
   const timeRegex = /^([0-1][0-9]|2[0-3]):([0-5][0-9])$/;
@@ -107,12 +117,15 @@ function templateToTodo(template: TodoTemplate, date: Date) {
   const endTime = new Date(startTime);
   endTime.setMinutes(endTime.getMinutes() + template.duration);
 
+  // 将中文分类名转换为英文键名
+  const categoryKey = CATEGORY_MAPPING[template.category] || template.category;
+
   return {
     title: template.title,
     description: template.description || null,
     start_time: startTime.toISOString(),
     end_time: endTime.toISOString(),
-    category: template.category,
+    category: categoryKey,
     is_completed: false,
     reminder_sent: false,
   };

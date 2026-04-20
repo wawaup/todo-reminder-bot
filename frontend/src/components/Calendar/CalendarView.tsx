@@ -167,139 +167,114 @@ interface DayViewProps {
   onTodoClick?: (todo: Todo) => void;
 }
 
-interface LayoutInfo {
-  column: number;      // 任务所在列（从0开始）
-  totalColumns: number; // 该重叠组的总列数
-}
-
 const DayView: React.FC<DayViewProps> = ({ date, todos }) => {
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  const HOUR_HEIGHT = 60; // 每小时的高度（像素）
+  const HOUR_HEIGHT = 80; // 每小时80px，15分钟=20px
+  const MIN_EVENT_HEIGHT = 28; // 常规事件最小高度
+  const SHORT_EVENT_HEIGHT = 24; // 短事件（<15分钟）最小高度
+  const SHORT_EVENT_THRESHOLD = 15; // 短事件阈值（分钟）
+  const EVENT_GAP = 4; // 事件右边距和底部间距
 
-  // 计算任务的精确位置和高度
   const getTaskPosition = (todo: Todo) => {
     const startTime = parseISO(todo.start_time);
     const endTime = parseISO(todo.end_time);
+    const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+    const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
+    const durationMinutes = endMinutes - startMinutes;
+    const top = (startMinutes / 60) * HOUR_HEIGHT;
 
-    const startHour = startTime.getHours();
-    const startMinute = startTime.getMinutes();
-    const endHour = endTime.getHours();
-    const endMinute = endTime.getMinutes();
+    // 短事件使用更小的最小高度
+    const minHeight = durationMinutes < SHORT_EVENT_THRESHOLD ? SHORT_EVENT_HEIGHT : MIN_EVENT_HEIGHT;
+    const height = Math.max((durationMinutes / 60) * HOUR_HEIGHT, minHeight);
 
-    // 计算从 0:00 开始的分钟数
-    const startTotalMinutes = startHour * 60 + startMinute;
-    const endTotalMinutes = endHour * 60 + endMinute;
-    const durationMinutes = endTotalMinutes - startTotalMinutes;
-
-    // 转换为像素位置
-    const top = (startTotalMinutes / 60) * HOUR_HEIGHT;
-    const height = Math.max((durationMinutes / 60) * HOUR_HEIGHT, 24); // 最小高度 24px
-
-    return { top, height };
+    return { top, height, durationMinutes };
   };
 
-  // 检查两个任务是否有时间重叠
-  const hasTimeOverlap = (todo1: Todo, todo2: Todo): boolean => {
-    const start1 = new Date(todo1.start_time);
-    const end1 = new Date(todo1.end_time);
-    const start2 = new Date(todo2.start_time);
-    const end2 = new Date(todo2.end_time);
-    return start1 < end2 && end1 > start2;
-  };
+  const layoutPositions = React.useMemo(() => {
+    const sorted = [...todos].sort((a, b) =>
+      parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime()
+    );
 
-  // 计算重叠事件的布局
-  const calculateOverlapLayout = (todos: Todo[]): Map<string, LayoutInfo> => {
-    if (todos.length === 0) return new Map();
+    const columns: number[] = new Array(sorted.length).fill(0);
+    const maxCols: number[] = new Array(sorted.length).fill(1);
 
-    const layout = new Map<string, LayoutInfo>();
+    for (let i = 0; i < sorted.length; i++) {
+      const startI = parseISO(sorted[i].start_time).getTime();
+      const endI = parseISO(sorted[i].end_time).getTime();
 
-    // 为每个任务检查是否有重叠
-    for (const todo of todos) {
-      const overlappingTodos = todos.filter(other =>
-        other.id !== todo.id && hasTimeOverlap(todo, other)
-      );
+      const overlapping = sorted
+        .map((t, j) => ({ j, start: parseISO(t.start_time).getTime(), end: parseISO(t.end_time).getTime() }))
+        .filter(({ j, start, end }) => j !== i && start < endI && end > startI);
 
-      // 如果没有重叠，占满整个宽度
-      if (overlappingTodos.length === 0) {
-        layout.set(todo.id, { column: 0, totalColumns: 1 });
-      }
+      const usedCols = new Set(overlapping.filter(({ j }) => j < i).map(({ j }) => columns[j]));
+      let col = 0;
+      while (usedCols.has(col)) col++;
+      columns[i] = col;
+
+      const groupIndices = [i, ...overlapping.map(({ j }) => j)];
+      const groupMaxCol = Math.max(...groupIndices.map(idx => columns[idx])) + 1;
+      groupIndices.forEach(idx => { maxCols[idx] = Math.max(maxCols[idx], groupMaxCol); });
     }
 
-    // 处理有重叠的任务组
-    const processed = new Set<string>();
+    const positions = new Map<string, { top: number; height: number; left: string; width: string }>();
+    sorted.forEach((todo, i) => {
+      const { top, height } = getTaskPosition(todo);
+      const col = columns[i];
+      const max = maxCols[i];
+      const leftPct = (col / max) * 100;
+      const widthPct = (1 / max) * 100;
+      positions.set(todo.id, {
+        top,
+        height,
+        left: `${leftPct}%`,
+        width: `${widthPct}%`,
+      });
+    });
 
-    for (const todo of todos) {
-      if (processed.has(todo.id)) continue;
+    return positions;
+  }, [todos]);
 
-      // 找出与当前任务重叠的所有任务（包括间接重叠）
-      const overlapGroup: Todo[] = [todo];
-      const toCheck = [todo];
 
-      while (toCheck.length > 0) {
-        const current = toCheck.pop()!;
+  // 自动滚动到当前时间
+  React.useEffect(() => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const scrollPosition = (currentMinutes / 60) * HOUR_HEIGHT - 120; // 当前时间往上留120px空间
 
-        for (const other of todos) {
-          if (processed.has(other.id) || overlapGroup.some(t => t.id === other.id)) {
-            continue;
-          }
-
-          // 检查是否与组内任何任务重叠
-          if (overlapGroup.some(t => hasTimeOverlap(t, other))) {
-            overlapGroup.push(other);
-            toCheck.push(other);
-          }
-        }
-      }
-
-      // 如果只有一个任务，已经在上面处理过了
-      if (overlapGroup.length === 1) {
-        processed.add(todo.id);
-        continue;
-      }
-
-      // 为重叠组分配列
-      const sorted = overlapGroup.sort((a, b) =>
-        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
-      );
-
-      const columns: Date[] = [];
-
-      for (const t of sorted) {
-        const start = new Date(t.start_time);
-        const end = new Date(t.end_time);
-
-        let column = 0;
-        while (column < columns.length && columns[column] > start) {
-          column++;
-        }
-
-        if (column < columns.length) {
-          columns[column] = end;
-        } else {
-          columns.push(end);
-        }
-
-        layout.set(t.id, { column, totalColumns: columns.length });
-        processed.add(t.id);
-      }
-
-      // 更新该组所有任务的 totalColumns
-      const maxColumns = columns.length;
-      for (const t of sorted) {
-        const info = layout.get(t.id)!;
-        info.totalColumns = maxColumns;
-      }
+    const container = containerRef.current;
+    if (container) {
+      container.scrollTop = Math.max(0, scrollPosition);
     }
+  }, [date]);
 
-    return layout;
+  // 每分钟更新一次时间线
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // 每60秒更新一次
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // 计算当前时间线的位置
+  const getCurrentTimePosition = () => {
+    const now = currentTime;
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    return (currentMinutes / 60) * HOUR_HEIGHT;
   };
 
-  const layoutMap = calculateOverlapLayout(todos);
+  const isToday = isSameDay(date, new Date());
 
   return (
     <>
-      <div className="relative">
+      <div
+        ref={containerRef}
+        className="relative overflow-y-auto"
+        style={{ height: 'calc(100vh - 300px)', minHeight: '500px' }}
+      >
         {/* 时间轴网格 */}
         <div className="space-y-0">
           {hours.map((hour) => (
@@ -312,43 +287,65 @@ const DayView: React.FC<DayViewProps> = ({ date, todos }) => {
           ))}
         </div>
 
+        {/* 实时时间线（仅在今天显示） */}
+        {isToday && (
+          <div
+            className="absolute left-0 right-0 z-20 flex items-center pointer-events-none"
+            style={{ top: `${getCurrentTimePosition()}px` }}
+          >
+            <div className="w-16 text-xs font-semibold text-red-500 bg-red-50 rounded px-2 py-0.5 text-right">
+              {format(currentTime, 'HH:mm')}
+            </div>
+            <div className="flex-1 h-0.5 bg-red-500" />
+            <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
+          </div>
+        )}
+
         {/* 任务时间块（绝对定位） */}
         <div className="absolute top-0 left-16 right-0" style={{ height: `${24 * HOUR_HEIGHT}px` }}>
           {todos.map((todo) => {
-            const { top, height } = getTaskPosition(todo);
-            const startTime = parseISO(todo.start_time);
-            const layout = layoutMap.get(todo.id) || { column: 0, totalColumns: 1 };
+            const position = layoutPositions.get(todo.id);
+            if (!position) return null;
 
-            // 计算水平位置和宽度
-            const columnWidth = 100 / layout.totalColumns;
-            const leftPercent = layout.column * columnWidth;
-            const widthPercent = columnWidth;
+            const { top, height, left, width } = position;
+            const startTime = parseISO(todo.start_time);
+            const endTime = parseISO(todo.end_time);
+            const durationMinutes = (endTime.getTime() - startTime.getTime()) / 60000;
+            const isShortEvent = durationMinutes < SHORT_EVENT_THRESHOLD;
 
             return (
               <div
                 key={todo.id}
                 onClick={() => setSelectedTodo(todo)}
-                className={`absolute px-2 py-1 rounded-lg text-xs overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${
+                className={`absolute px-2 py-1 rounded text-xs overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${
                   todo.is_completed ? 'opacity-60' : ''
                 }`}
                 style={{
                   top: `${top}px`,
                   height: `${height}px`,
-                  left: `${leftPercent}%`,
-                  width: `calc(${widthPercent}% - 4px)`,
+                  left,
+                  width,
                   backgroundColor: getCategoryInfo(todo.category).bgColor,
                   color: getCategoryInfo(todo.category).color,
-                  border: `1px solid ${getCategoryInfo(todo.category).color}20`,
                 }}
-                title={`${format(startTime, 'HH:mm')} - ${format(parseISO(todo.end_time), 'HH:mm')}: ${todo.title}`}
+                title={`${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}: ${todo.title}`}
               >
-                <div className={`font-medium truncate ${todo.is_completed ? 'line-through' : ''}`}>
-                  {getCategoryInfo(todo.category).emoji} {format(startTime, 'HH:mm')} {todo.title}
-                </div>
-                {height > 40 && todo.description && (
-                  <div className="text-xs opacity-75 truncate mt-0.5">
-                    {todo.description}
+                {isShortEvent ? (
+                  <div className={`font-medium truncate ${todo.is_completed ? 'line-through' : ''}`}>
+                    {getCategoryInfo(todo.category).emoji} {format(startTime, 'HH:mm')} {todo.title}
+                    {todo.description && <span className="opacity-75"> - {todo.description}</span>}
                   </div>
+                ) : (
+                  <>
+                    <div className={`font-medium truncate ${todo.is_completed ? 'line-through' : ''}`}>
+                      {getCategoryInfo(todo.category).emoji} {format(startTime, 'HH:mm')} {todo.title}
+                    </div>
+                    {height > 40 && todo.description && (
+                      <div className="text-xs opacity-75 truncate mt-0.5">
+                        {todo.description}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             );
