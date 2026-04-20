@@ -26,7 +26,7 @@ interface TodosFile {
 }
 
 // 验证分类
-const VALID_CATEGORIES = ["日常", "学习", "工作", "运动", "其他"];
+const VALID_CATEGORIES = ["学习", "健康", "运动", "作息", "冥想", "日常"];
 
 // 验证时间格式
 function validateDateTime(dateStr: string): boolean {

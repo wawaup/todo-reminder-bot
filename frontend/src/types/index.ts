@@ -1,6 +1,6 @@
 // 全局类型定义
 
-export type TodoCategory = 'life' | 'daily' | 'work' | 'study';
+export type TodoCategory = 'study' | 'health' | 'exercise' | 'sleep' | 'meditation' | 'daily';
 
 export type FeelingType = 'great' | 'okay' | 'sad' | 'energetic' | 'exceeded' | 'custom';
 
@@ -43,29 +43,41 @@ export interface CategoryInfo {
 }
 
 export const CATEGORIES: Record<TodoCategory, CategoryInfo> = {
-  life: {
-    emoji: '🏠',
-    label: '生活琐事',
-    color: '#FF8A65',
-    bgColor: '#FFF3E0',
-  },
-  daily: {
-    emoji: '☀️',
-    label: '日常提醒',
-    color: '#FFD54F',
-    bgColor: '#FFFDE7',
-  },
-  work: {
-    emoji: '💼',
-    label: '工作事件',
-    color: '#64B5F6',
-    bgColor: '#E3F2FD',
-  },
   study: {
     emoji: '📚',
-    label: '学习任务',
+    label: '学习',
     color: '#BA68C8',
     bgColor: '#F3E5F5',
+  },
+  health: {
+    emoji: '🥗',
+    label: '健康',
+    color: '#66BB6A',
+    bgColor: '#E8F5E9',
+  },
+  exercise: {
+    emoji: '💪',
+    label: '运动',
+    color: '#FF7043',
+    bgColor: '#FBE9E7',
+  },
+  sleep: {
+    emoji: '🌙',
+    label: '作息',
+    color: '#5C6BC0',
+    bgColor: '#E8EAF6',
+  },
+  meditation: {
+    emoji: '🧘',
+    label: '冥想',
+    color: '#26A69A',
+    bgColor: '#E0F2F1',
+  },
+  daily: {
+    emoji: '🏠',
+    label: '日常',
+    color: '#FFD54F',
+    bgColor: '#FFFDE7',
   },
 };
 

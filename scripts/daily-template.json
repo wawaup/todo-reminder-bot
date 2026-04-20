@@ -1,0 +1,27 @@
+{
+  "start_date": "2026-04-21",
+  "end_date": "2026-04-30",
+  "todos": [
+    {
+      "title": "早晨冥想",
+      "description": "开始新的一天",
+      "time": "07:00",
+      "duration": 30,
+      "category": "日常"
+    },
+    {
+      "title": "晨间阅读",
+      "description": "阅读专业书籍",
+      "time": "08:00",
+      "duration": 60,
+      "category": "学习"
+    },
+    {
+      "title": "健身锻炼",
+      "description": "保持身体健康",
+      "time": "18:00",
+      "duration": 60,
+      "category": "运动"
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "start_date": "2026-04-21",
+  "end_date": "2026-05-18",
+  "todos": [
+    {
+      "title": "起床+自然光光照",
+      "description": "晒太阳15分钟，重置睡眠觉醒节律，抑制褪黑素",
+      "time": "07:00",
+      "duration": 15,
+      "category": "作息"
+    },
+    {
+      "title": "服用苏糖酸镁+洗漱",
+      "description": "早晨服用苏糖酸镁，提升认知灵活性与工作记忆",
+      "time": "07:15",
+      "duration": 15,
+      "category": "健康"
+    },
+    {
+      "title": "晨间轻断食",
+      "description": "仅饮水，空腹提升BDNF脑源性神经营养因子",
+      "time": "07:30",
+      "duration": 60,
+      "category": "健康"
+    },
+    {
+      "title": "黄金脑力·AI深度学习",
+      "description": "AI理论、代码调试、模型攻坚，关闭手机通知专注学习",
+      "time": "08:30",
+      "duration": 120,
+      "category": "学习"
+    },
+    {
+      "title": "休息加餐+服用B族维生素",
+      "description": "补充能量，服用复合B族，防止上午脑力断崖",
+      "time": "10:30",
+      "duration": 15,
+      "category": "健康"
+    },
+    {
+      "title": "进阶脑力·股票知识学习",
+      "description": "K线、交易策略、逻辑分析等内容学习",
+      "time": "10:45",
+      "duration": 75,
+      "category": "学习"
+    },
+    {
+      "title": "午餐+服用Omega-3鱼油",
+      "description": "清淡午餐，随餐服用鱼油，提升DHA吸收率修复神经元",
+      "time": "12:00",
+      "duration": 60,
+      "category": "健康"
+    },
+    {
+      "title": "正念身体扫描冥想",
+      "description": "10分钟身体扫描，降低皮质醇，保护海马体",
+      "time": "13:00",
+      "duration": 20,
+      "category": "冥想"
+    },
+    {
+      "title": "实战脑力·AI项目实践",
+      "description": "编码、模型训练、项目落地与实战调试",
+      "time": "13:30",
+      "duration": 120,
+      "category": "学习"
+    },
+    {
+      "title": "中等强度有氧运动",
+      "description": "快走/慢跑30分钟，提升BDNF，打开记忆固化黄金窗",
+      "time": "15:30",
+      "duration": 30,
+      "category": "运动"
+    },
+    {
+      "title": "记忆黄金窗·英语学习",
+      "description": "运动后高峰期进行单词、听力训练，提升记忆效率",
+      "time": "16:00",
+      "duration": 120,
+      "category": "学习"
+    },
+    {
+      "title": "清淡晚餐",
+      "description": "避免高油高糖，防止餐后困倦与食物昏迷",
+      "time": "18:00",
+      "duration": 60,
+      "category": "健康"
+    },
+    {
+      "title": "AI学习复盘+自由工作",
+      "description": "整理当日学习成果，归纳总结与轻量工作处理",
+      "time": "19:00",
+      "duration": 120,
+      "category": "学习"
+    },
+    {
+      "title": "服用辅酶Q10",
+      "description": "晚餐后服用，抗氧化清除自由基，保护线粒体",
+      "time": "21:00",
+      "duration": 10,
+      "category": "健康"
+    },
+    {
+      "title": "低压力法语学习",
+      "description": "20-30分钟轻松学习，作为睡前放松仪式",
+      "time": "21:30",
+      "duration": 60,
+      "category": "学习"
+    },
+    {
+      "title": "服用褪黑素（第1-2周）",
+      "description": "0.3mg小剂量辅助入睡，第3周起停用",
+      "time": "22:30",
+      "duration": 10,
+      "category": "健康"
+    },
+    {
+      "title": "电子设备禁断",
+      "description": "手机飞行模式，隔绝蓝光，为深度睡眠做准备",
+      "time": "23:00",
+      "duration": 30,
+      "category": "作息"
+    },
+    {
+      "title": "4-7-8呼吸正念入睡",
+      "description": "10分钟呼吸冥想，关闭交感神经，准时入睡",
+      "time": "23:30",
+      "duration": 30,
+      "category": "冥想"
+    }
+  ]
+}

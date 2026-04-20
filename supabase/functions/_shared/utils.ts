@@ -5,10 +5,12 @@ export const REMINDER_WINDOW_START_MIN = 0;
 export const REMINDER_WINDOW_END_MIN = 10;
 
 export const CATEGORY_INFO: Record<string, { emoji: string; label: string }> = {
-  life: { emoji: "🏠", label: "生活" },
-  daily: { emoji: "☀️", label: "日常" },
-  work: { emoji: "💼", label: "工作" },
-  study: { emoji: "📚", label: "学习" },
+  学习: { emoji: "📚", label: "学习" },
+  健康: { emoji: "🥗", label: "健康" },
+  运动: { emoji: "💪", label: "运动" },
+  作息: { emoji: "🌙", label: "作息" },
+  冥想: { emoji: "🧘", label: "冥想" },
+  日常: { emoji: "🏠", label: "日常" },
 };
 
 // 环境变量验证

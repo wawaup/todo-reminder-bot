@@ -1,0 +1,111 @@
+{
+  "start_date": "2026-05-19",
+  "end_date": "2026-06-15",
+  "todos": [
+    {
+      "title": "起床+自然光光照",
+      "description": "晒太阳15分钟，巩固稳定生物钟节律",
+      "time": "07:00",
+      "duration": 15,
+      "category": "作息"
+    },
+    {
+      "title": "服用苏糖酸镁+洗漱",
+      "description": "早晨服用苏糖酸镁，强化神经传导，提升大脑算力",
+      "time": "07:15",
+      "duration": 15,
+      "category": "健康"
+    },
+    {
+      "title": "空腹晨间有氧",
+      "description": "快走/跳绳20分钟，消除脑雾，提升全天唤醒水平",
+      "time": "07:30",
+      "duration": 60,
+      "category": "运动"
+    },
+    {
+      "title": "极致黄金脑力·AI深度攻坚",
+      "description": "超长深度专注，AI核心算法、复杂项目硬核攻坚",
+      "time": "08:30",
+      "duration": 210,
+      "category": "学习"
+    },
+    {
+      "title": "午餐+服用B族+鱼油",
+      "description": "营养午餐，随餐服用鱼油与B族，保障脑力供能",
+      "time": "12:00",
+      "duration": 60,
+      "category": "健康"
+    },
+    {
+      "title": "20分钟短午睡",
+      "description": "清除大脑代谢废物，恢复下午高强度专注能力",
+      "time": "13:00",
+      "duration": 30,
+      "category": "作息"
+    },
+    {
+      "title": "股票交易实战/复盘",
+      "description": "模拟交易、盘面分析、策略复盘贴合股市时段",
+      "time": "13:30",
+      "duration": 120,
+      "category": "学习"
+    },
+    {
+      "title": "HIIT/力量训练（每周3次）",
+      "description": "20分钟HIIT，使BDNF翻倍，刺激海马体神经元新生",
+      "time": "15:30",
+      "duration": 60,
+      "category": "运动"
+    },
+    {
+      "title": "运动后英语沉浸学习",
+      "description": "记忆超量恢复期，口语、长难句、听力强化训练",
+      "time": "16:30",
+      "duration": 90,
+      "category": "学习"
+    },
+    {
+      "title": "清淡晚餐",
+      "description": "控碳控糖，为夜间大脑修复提供稳定环境",
+      "time": "18:00",
+      "duration": 60,
+      "category": "健康"
+    },
+    {
+      "title": "服用辅酶Q10",
+      "description": "晚餐后服用，强化抗氧化，对抗高强度用脑疲劳",
+      "time": "19:00",
+      "duration": 10,
+      "category": "健康"
+    },
+    {
+      "title": "AI输出·成果落地",
+      "description": "代码输出、博客撰写、笔记整理，强化记忆固化",
+      "time": "19:10",
+      "duration": 110,
+      "category": "学习"
+    },
+    {
+      "title": "低压力法语学习",
+      "description": "20-30分钟轻松学习，保持睡前愉悦放松状态",
+      "time": "21:00",
+      "duration": 30,
+      "category": "学习"
+    },
+    {
+      "title": "电子设备禁断",
+      "description": "手机飞行模式，完全隔绝蓝光，保障深度睡眠",
+      "time": "23:00",
+      "duration": 30,
+      "category": "作息"
+    },
+    {
+      "title": "正念准时入睡",
+      "description": "固定23:30入睡，生物钟已稳定无需褪黑素",
+      "time": "23:30",
+      "duration": 30,
+      "category": "冥想"
+    }
+  ]
+}
