@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Trash2, Edit3, Clock, X } from 'lucide-react';
-import { Todo, CATEGORIES, FEELINGS, FeelingType } from '../../types';
+import { Todo, getCategoryInfo, FEELINGS, FeelingType } from '../../types';
 import { Button } from '../common';
 import { format, parseISO } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -27,7 +27,8 @@ export const TodoItem: React.FC<TodoItemProps> = ({
   const [showFeelings, setShowFeelings] = useState(false);
   const [customFeeling, setCustomFeeling] = useState('');
 
-  const categoryInfo = CATEGORIES[todo.category];
+  // 防御性处理：如果分类不存在，使用默认分类
+  const categoryInfo = getCategoryInfo(todo.category);
   const startTime = parseISO(todo.start_time);
   const endTime = parseISO(todo.end_time);
 

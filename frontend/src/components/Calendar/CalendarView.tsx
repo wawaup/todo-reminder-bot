@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addDays, addMonths, subMonths, addWeeks, subWeeks, parseISO } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { Todo, ViewType, CATEGORIES } from '../../types';
+import { Todo, ViewType, getCategoryInfo } from '../../types';
 
 interface CalendarViewProps {
   viewType: ViewType;
@@ -336,14 +336,14 @@ const DayView: React.FC<DayViewProps> = ({ date, todos }) => {
                   height: `${height}px`,
                   left: `${leftPercent}%`,
                   width: `calc(${widthPercent}% - 4px)`,
-                  backgroundColor: CATEGORIES[todo.category].bgColor,
-                  color: CATEGORIES[todo.category].color,
-                  border: `1px solid ${CATEGORIES[todo.category].color}20`,
+                  backgroundColor: getCategoryInfo(todo.category).bgColor,
+                  color: getCategoryInfo(todo.category).color,
+                  border: `1px solid ${getCategoryInfo(todo.category).color}20`,
                 }}
                 title={`${format(startTime, 'HH:mm')} - ${format(parseISO(todo.end_time), 'HH:mm')}: ${todo.title}`}
               >
                 <div className={`font-medium truncate ${todo.is_completed ? 'line-through' : ''}`}>
-                  {CATEGORIES[todo.category].emoji} {format(startTime, 'HH:mm')} {todo.title}
+                  {getCategoryInfo(todo.category).emoji} {format(startTime, 'HH:mm')} {todo.title}
                 </div>
                 {height > 40 && todo.description && (
                   <div className="text-xs opacity-75 truncate mt-0.5">
@@ -379,15 +379,15 @@ const DayView: React.FC<DayViewProps> = ({ date, todos }) => {
             </h3>
 
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">{CATEGORIES[selectedTodo.category].emoji}</span>
+              <span className="text-2xl">{getCategoryInfo(selectedTodo.category).emoji}</span>
               <span
                 className="px-3 py-1 rounded-full text-sm font-medium"
                 style={{
-                  backgroundColor: CATEGORIES[selectedTodo.category].bgColor,
-                  color: CATEGORIES[selectedTodo.category].color,
+                  backgroundColor: getCategoryInfo(selectedTodo.category).bgColor,
+                  color: getCategoryInfo(selectedTodo.category).color,
                 }}
               >
-                {CATEGORIES[selectedTodo.category].label}
+                {getCategoryInfo(selectedTodo.category).label}
               </span>
             </div>
 
@@ -485,8 +485,8 @@ const WeekView: React.FC<WeekViewProps> = ({ date, getTodosForDate, onDateClick 
                   key={todo.id}
                   className="text-xs px-1.5 py-0.5 rounded truncate"
                   style={{
-                    backgroundColor: CATEGORIES[todo.category].bgColor,
-                    color: CATEGORIES[todo.category].color,
+                    backgroundColor: getCategoryInfo(todo.category).bgColor,
+                    color: getCategoryInfo(todo.category).color,
                   }}
                 >
                   {todo.title}

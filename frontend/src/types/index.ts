@@ -89,6 +89,11 @@ export const FEELINGS: { type: FeelingType; emoji: string; label: string }[] = [
   { type: 'exceeded', emoji: '🎉', label: '超额完成' },
 ];
 
+// 安全获取分类信息的辅助函数
+export const getCategoryInfo = (category: string): CategoryInfo => {
+  return CATEGORIES[category as TodoCategory] || CATEGORIES.daily;
+};
+
 export type ViewType = 'day' | 'week' | 'month';
 
 export interface Dayjs {
